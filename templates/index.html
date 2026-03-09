@@ -28,7 +28,20 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            cursor: none;
+        }
+
+        /* Custom cursor only on mouse devices */
+        @media (pointer: fine) {
+            * {
+                cursor: none;
+            }
+
+            .type-tab,
+            .form-group input,
+            .form-group select,
+            .submit-btn {
+                cursor: none;
+            }
         }
 
         html {
@@ -222,7 +235,6 @@
             font-size: 0.78rem;
             font-weight: 500;
             transition: var(--transition);
-            cursor: none;
             letter-spacing: 0.2px;
         }
 
@@ -276,7 +288,6 @@
             font-size: 0.95rem;
             transition: var(--transition);
             outline: none;
-            cursor: none;
         }
 
         .form-group input:focus,
@@ -330,7 +341,6 @@
             border-radius: 8px;
             transition: var(--transition);
             font-family: 'Inter', sans-serif;
-            cursor: none;
             margin-top: 0.5rem;
         }
 
@@ -770,11 +780,37 @@
                 const contentType = response.headers.get('Content-Type') || '';
 
                 if (contentType.includes('application/json')) {
-                    // Error from server
                     const result = await response.json();
-                    showMessage('❌ ' + result.message, 'error');
+
+                    if (!result.success) {
+                        showMessage('❌ ' + result.message, 'error');
+                    } else if (result.type === 'gallery_list') {
+                        // ── Gallery: save each image directly to Downloads (no zip) ──
+                        const files = result.files;
+                        if (!files || files.length === 0) {
+                            showMessage('❌ No images downloaded.', 'error');
+                        } else {
+                            for (let i = 0; i < files.length; i++) {
+                                await new Promise(r => setTimeout(r, i * 150));
+                                const byteChars = atob(files[i].data);
+                                const byteArr = new Uint8Array(byteChars.length);
+                                for (let j = 0; j < byteChars.length; j++) byteArr[j] = byteChars.charCodeAt(j);
+                                const blob = new Blob([byteArr]);
+                                const objUrl = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = objUrl;
+                                a.download = files[i].name;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(objUrl);
+                            }
+                            showMessage(`✅ ${files.length} image(s) saved directly to your Downloads!`, 'success');
+                            urlInput.value = '';
+                        }
+                    }
                 } else {
-                    // ✅ File incoming — trigger browser download
+                    // ✅ Binary file incoming — trigger browser download
                     const blob = await response.blob();
                     const cd = response.headers.get('Content-Disposition') || '';
                     let filename = 'download';

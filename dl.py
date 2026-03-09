@@ -1,5 +1,6 @@
 import os
 import io
+import base64
 import requests
 import yt_dlp
 import gallery_dl
@@ -12,7 +13,7 @@ import tempfile
 
 # ─────────────────────────────────────────────
 # 1. Direct File Downloader (Images, ZIPs, PDFs)
-#    → Returns (True, filename, bytes) or (False, None, None)
+#    → Returns (True, filename, bytes) or (False, None, error)
 # ─────────────────────────────────────────────
 def file_downloader(url):
     try:
@@ -20,10 +21,8 @@ def file_downloader(url):
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
 
-        # Try to get a good filename from the URL
         filename = url.split("/")[-1].split("?")[0]
         if not filename or '.' not in filename:
-            # Try Content-Disposition header
             cd = response.headers.get('Content-Disposition', '')
             if 'filename=' in cd:
                 filename = cd.split('filename=')[-1].strip('"\'')
@@ -52,20 +51,17 @@ def video_downloader(url, quality="1"):
             }],
             'quiet': True,
         }
-        label = "Audio (MP3)"
     else:
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             'quiet': True,
         }
-        label = "Video (MP4)"
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        # Find the downloaded file
         files = os.listdir(tmp_dir)
         if not files:
             return False, None, "Download failed: no file produced."
@@ -76,14 +72,12 @@ def video_downloader(url, quality="1"):
         with open(filepath, 'rb') as f:
             file_bytes = f.read()
 
-        # Cleanup temp dir
         os.remove(filepath)
         os.rmdir(tmp_dir)
 
         return True, filename, file_bytes
 
     except Exception as e:
-        # Cleanup on error
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
@@ -92,7 +86,8 @@ def video_downloader(url, quality="1"):
 
 # ─────────────────────────────────────────────
 # 3. Image Gallery Downloader
-#    → Downloads to temp dir, zips everything, returns zip bytes
+#    → Downloads to temp dir, returns each file as base64
+#      so the browser saves each image DIRECTLY (no zip)
 # ─────────────────────────────────────────────
 def gallery_downloader(url):
     tmp_dir = tempfile.mkdtemp()
@@ -103,18 +98,16 @@ def gallery_downloader(url):
         job = gallery_dl.job.DownloadJob(url)
         job.run()
 
-        # Zip all downloaded files
-        zip_buffer = io.BytesIO()
-        file_count = 0
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for root, dirs, files in os.walk(tmp_dir):
-                for file in files:
-                    filepath = os.path.join(root, file)
-                    arcname = os.path.relpath(filepath, tmp_dir)
-                    zf.write(filepath, arcname)
-                    file_count += 1
-
-        zip_buffer.seek(0)
+        # Collect all downloaded files as base64 for JSON transport
+        file_items = []
+        for root, dirs, files in os.walk(tmp_dir):
+            for file in sorted(files):
+                filepath = os.path.join(root, file)
+                with open(filepath, 'rb') as f:
+                    file_items.append({
+                        'name': file,
+                        'data': base64.b64encode(f.read()).decode('utf-8')
+                    })
 
         # Cleanup
         for root, dirs, files in os.walk(tmp_dir, topdown=False):
@@ -124,13 +117,13 @@ def gallery_downloader(url):
                 os.rmdir(os.path.join(root, d))
         os.rmdir(tmp_dir)
 
-        if file_count == 0:
+        if not file_items:
             return False, None, "No files were downloaded from this gallery."
 
-        return True, "gallery.zip", zip_buffer.read()
+        # Special marker — app.py returns JSON with base64 file list
+        return True, '__GALLERY_LIST__', file_items
 
     except Exception as e:
-        # Cleanup on error
         for root, dirs, files in os.walk(tmp_dir, topdown=False):
             for f in files:
                 os.remove(os.path.join(root, f))
@@ -145,7 +138,7 @@ def gallery_downloader(url):
 
 # ─────────────────────────────────────────────
 # 4. Web Page Image Scraper
-#    → Scrapes all images, zips them, returns zip bytes
+#    → Scrapes all images, zips them into ONE .zip file
 # ─────────────────────────────────────────────
 def webpage_image_scraper(url):
     try:
@@ -158,15 +151,20 @@ def webpage_image_scraper(url):
         img_tags = soup.find_all('img')
 
         img_urls = []
+        seen = set()
         for img in img_tags:
-            src = img.get('src') or img.get('data-src')
-            if src:
-                if src.startswith('http'):
-                    img_urls.append(src)
-                elif src.startswith('//'):
-                    img_urls.append('https:' + src)
-                else:
-                    img_urls.append(urljoin(url, src))
+            src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
+            if not src:
+                continue
+            if src.startswith('http'):
+                abs_url = src
+            elif src.startswith('//'):
+                abs_url = 'https:' + src
+            else:
+                abs_url = urljoin(url, src)
+            if abs_url not in seen:
+                seen.add(abs_url)
+                img_urls.append(abs_url)
 
         if not img_urls:
             return False, None, "No images found on this page."
