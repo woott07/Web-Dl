@@ -48,30 +48,11 @@ def file_downloader(url):
 def video_downloader(url, quality="1"):
     tmp_dir = tempfile.mkdtemp()
 
-    # ── Bypass YouTube bot detection on server IPs ──────────────────────────
-    # Use mobile/TV app clients instead of the web client.
-    # Android & iOS clients are not subject to the same bot-check as web.
-    bypass = {
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'ios', 'tv_embedded'],
-            }
-        },
-        'http_headers': {
-            'User-Agent': (
-                'Mozilla/5.0 (Linux; Android 13; Pixel 7) '
-                'AppleWebKit/537.36 (KHTML, like Gecko) '
-                'Chrome/120.0.0.0 Mobile Safari/537.36'
-            ),
-        },
-    }
-
     if quality == "2":
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best',
             'quiet': True,
-            **bypass,
         }
     else:
         ydl_opts = {
@@ -79,7 +60,6 @@ def video_downloader(url, quality="1"):
             'format': 'bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'quiet': True,
-            **bypass,
         }
 
     # Automatically use cookies.txt if it exists to bypass strict datacenter IP bans
