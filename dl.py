@@ -91,8 +91,11 @@ def video_downloader(url, quality="1"):
         return True, filename, file_bytes
 
     except Exception as e:
-        # Include debug info so we know what went wrong
-        debug = f"{str(e)} | cookies_found={cookie_file is not None} | cwd={os.getcwd()}"
+        try:
+            preview = open(cookie_file).read(80).replace('\n','\\n').replace('\t','\\t') if cookie_file else 'N/A'
+        except Exception:
+            preview = 'unreadable'
+        debug = f"{str(e)} | cookies_found={cookie_file is not None} | cookie_preview={preview}"
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
