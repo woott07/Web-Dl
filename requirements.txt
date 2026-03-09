@@ -4,3 +4,4 @@ requests
 wget
 beautifulsoup4
 tqdm
+flask
