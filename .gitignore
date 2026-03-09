@@ -52,3 +52,6 @@ htmlcov/
 *.bak
 *.swp
 *.swo
+
+# ── Credentials ───────────────────────────────
+cookies.txt

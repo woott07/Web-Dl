@@ -1,7 +1,15 @@
 import io
+import os
 import mimetypes
 from flask import Flask, render_template, request, jsonify, send_file
 import dl
+
+# If YouTube cookies are provided via Railway variables, write them to file at startup
+# (Run this globally so Gunicorn executes it when loading the app)
+yt_cookies = os.environ.get('YT_COOKIES')
+if yt_cookies:
+    with open('cookies.txt', 'w', encoding='utf-8') as f:
+        f.write(yt_cookies)
 
 app = Flask(__name__)
 
@@ -62,6 +70,5 @@ def download():
 
 
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)

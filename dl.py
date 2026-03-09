@@ -87,6 +87,11 @@ def video_downloader(url, quality="1"):
             **bypass,
         }
 
+    # Automatically use cookies.txt if it exists to bypass strict datacenter IP bans
+    cookie_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    if os.path.exists(cookie_path):
+        ydl_opts['cookiefile'] = cookie_path
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
