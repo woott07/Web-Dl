@@ -69,6 +69,12 @@ def video_downloader(url, quality="1"):
 
     ydl_opts = {
         'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
+        # iOS/Android player clients return pre-merged MP4 streams — no ffmpeg needed at all
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios', 'android', 'web'],
+            }
+        },
         'quiet': True,
     }
 
