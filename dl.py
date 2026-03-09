@@ -48,25 +48,43 @@ def file_downloader(url):
 def video_downloader(url, quality="1"):
     tmp_dir = tempfile.mkdtemp()
 
+    # ── Bypass YouTube bot detection on server IPs ──────────────────────────
+    # Use mobile/TV app clients instead of the web client.
+    # Android & iOS clients are not subject to the same bot-check as web.
+    bypass = {
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios', 'tv_embedded'],
+            }
+        },
+        'http_headers': {
+            'User-Agent': (
+                'Mozilla/5.0 (Linux; Android 13; Pixel 7) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/120.0.0.0 Mobile Safari/537.36'
+            ),
+        },
+    }
+
     if quality == "2":
-        # Audio: best quality m4a/webm, no ffmpeg conversion needed
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
             'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best',
             'quiet': True,
+            **bypass,
         }
     else:
-        # Video: best quality first (needs ffmpeg to merge) → pre-merged fallback
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
             'format': (
-                'bestvideo[ext=mp4]+bestaudio[ext=m4a]'  # best quality (ffmpeg merge)
-                '/bestvideo+bestaudio'                    # best available + merge
-                '/best[ext=mp4]'                          # pre-merged mp4 fallback
-                '/best'                                   # last resort
+                'bestvideo[ext=mp4]+bestaudio[ext=m4a]'
+                '/bestvideo+bestaudio'
+                '/best[ext=mp4]'
+                '/best'
             ),
             'merge_output_format': 'mp4',
             'quiet': True,
+            **bypass,
         }
 
     try:
