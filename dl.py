@@ -75,11 +75,7 @@ def video_downloader(url, quality="1"):
 
     ydl_opts = {
         'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['ios', 'android', 'web'],
-            }
-        },
+        'format': 'bestaudio/best' if quality == "2" else 'b',
         'quiet': True,
     }
 
@@ -108,10 +104,15 @@ def video_downloader(url, quality="1"):
         return True, filename, file_bytes
 
     except Exception as e:
+        try:
+            preview = open(tmp_cookie).read(80).replace('\n','\\n').replace('\t','\\t') if tmp_cookie else 'N/A'
+        except Exception:
+            preview = 'unreadable'
+        debug = f"{str(e)} | cookies={preview}"
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
-        return False, None, str(e)
+        return False, None, debug
 
 
 # ─────────────────────────────────────────────
