@@ -83,9 +83,6 @@ def video_downloader(url, quality="1"):
         'quiet': True,
     }
 
-    if quality == "2":
-        ydl_opts['format'] = 'bestaudio/best'
-
     if tmp_cookie:
         ydl_opts['cookiefile'] = tmp_cookie
 
