@@ -6,3 +6,4 @@ beautifulsoup4
 tqdm
 flask
 gunicorn
+static-ffmpeg

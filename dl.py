@@ -10,6 +10,13 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import tempfile
 
+# Ensure ffmpeg binary is available on PATH (works on Railway without system ffmpeg)
+try:
+    import static_ffmpeg
+    static_ffmpeg.add_paths()
+except ImportError:
+    pass  # ffmpeg already in system PATH or not needed
+
 # ─────────────────────────────────────────────
 # 1. Direct File Downloader (Images, ZIPs, PDFs)
 #    → Returns (True, filename, bytes) or (False, None, error)
