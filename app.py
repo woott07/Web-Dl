@@ -34,8 +34,12 @@ def download():
             # result is the error message string
             return jsonify({'success': False, 'message': result})
 
-        # Special case: gallery returns base64 file list for direct browser saves (no zip)
+        # Gallery: each image as base64 for direct browser saves (no zip)
         if filename == '__GALLERY_LIST__':
+            return jsonify({'success': True, 'type': 'gallery_list', 'files': result})
+
+        # Web Scraper: same direct-save approach, each image individually
+        if filename == '__SCRAPER_LIST__':
             return jsonify({'success': True, 'type': 'gallery_list', 'files': result})
 
         # result is bytes — stream straight to the user's browser

@@ -8,7 +8,6 @@ import gallery_dl.job
 import gallery_dl.config
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-import zipfile
 import tempfile
 
 # ─────────────────────────────────────────────
@@ -146,7 +145,6 @@ def webpage_image_scraper(url):
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
 
-        domain = urlparse(url).netloc.replace("www.", "")
         soup = BeautifulSoup(response.text, 'html.parser')
         img_tags = soup.find_all('img')
 
@@ -169,26 +167,28 @@ def webpage_image_scraper(url):
         if not img_urls:
             return False, None, "No images found on this page."
 
-        zip_buffer = io.BytesIO()
-        count = 0
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for i, img_url in enumerate(img_urls):
-                try:
-                    filename = img_url.split("/")[-1].split("?")[0]
-                    if not filename or '.' not in filename:
-                        filename = f"image_{i}.jpg"
-                    img_data = requests.get(img_url, headers=headers, timeout=10)
-                    zf.writestr(filename, img_data.content)
-                    count += 1
-                except Exception:
-                    pass
+        # Download each image as bytes and return as base64 list
+        # → browser saves each file directly (no zip, opens on any device)
+        file_items = []
+        for i, img_url in enumerate(img_urls):
+            try:
+                img_data = requests.get(img_url, headers=headers, timeout=10)
+                if not img_data.ok:
+                    continue
+                filename = img_url.split("/")[-1].split("?")[0]
+                if not filename or '.' not in filename:
+                    filename = f"image_{i}.jpg"
+                file_items.append({
+                    'name': filename,
+                    'data': base64.b64encode(img_data.content).decode('utf-8')
+                })
+            except Exception:
+                pass
 
-        zip_buffer.seek(0)
-
-        if count == 0:
+        if not file_items:
             return False, None, "Could not download any images."
 
-        return True, f"{domain}_images.zip", zip_buffer.read()
+        return True, '__SCRAPER_LIST__', file_items
 
     except Exception as e:
         return False, None, str(e)
