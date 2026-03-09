@@ -62,7 +62,6 @@ def video_downloader(url, quality="1"):
 
     ydl_opts = {
         'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-        'format': 'best',
         'quiet': True,
     }
 
