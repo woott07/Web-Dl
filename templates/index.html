@@ -162,7 +162,7 @@
         /* ── Main Card ─────────────────────────────── */
         .main-wrapper {
             width: 100%;
-            max-width: 560px;
+            max-width: 640px;
             padding: 0 1.5rem;
             display: flex;
             flex-direction: column;
@@ -213,53 +213,119 @@
             transform: translateY(0);
         }
 
-        /* ── Type Selector Tabs ────────────────────── */
+        /* ── Type Selector Cards ────────────────────── */
         .type-tabs {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 0.6rem;
+            gap: 0.65rem;
             margin-bottom: 1.75rem;
         }
 
         .type-tab {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.85rem 0.5rem;
-            border-radius: 10px;
+            align-items: flex-start;
+            gap: 0;
+            padding: 1rem 1rem 0.85rem;
+            border-radius: 12px;
             border: 1px solid var(--glass-border);
-            background: transparent;
+            background: rgba(255, 255, 255, 0.015);
             color: var(--text-muted);
             font-family: 'Inter', sans-serif;
-            font-size: 0.78rem;
-            font-weight: 500;
+            text-align: left;
             transition: var(--transition);
-            letter-spacing: 0.2px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .type-tab i,
-        .type-tab svg {
-            width: 18px;
-            height: 18px;
+        .type-tab::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(101, 132, 165, 0.06) 0%, transparent 60%);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .type-tab:hover::before {
+            opacity: 1;
+        }
+
+        .tab-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(101, 132, 165, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.6rem;
+            transition: var(--transition);
+        }
+
+        .tab-icon svg,
+        .tab-icon i {
+            width: 15px;
+            height: 15px;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .tab-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.2rem;
+            line-height: 1.2;
+        }
+
+        .tab-desc {
+            font-size: 0.71rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 0.55rem;
+        }
+
+        .tab-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .tab-pill {
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            padding: 0.15rem 0.45rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
             color: var(--text-muted);
             transition: var(--transition);
         }
 
         .type-tab:hover {
-            border-color: rgba(101, 132, 165, 0.3);
-            color: var(--text-main);
-            background: rgba(101, 132, 165, 0.05);
+            border-color: rgba(101, 132, 165, 0.35);
+            background: rgba(101, 132, 165, 0.04);
         }
 
         .type-tab.active {
             border-color: var(--accent);
-            color: var(--text-main);
-            background: rgba(101, 132, 165, 0.1);
+            background: rgba(101, 132, 165, 0.08);
         }
 
-        .type-tab.active i,
-        .type-tab.active svg {
+        .type-tab.active .tab-icon {
+            background: rgba(101, 132, 165, 0.2);
+        }
+
+        .type-tab.active .tab-icon svg,
+        .type-tab.active .tab-icon i {
+            color: var(--accent);
+        }
+
+        .type-tab.active .tab-pill {
+            background: rgba(101, 132, 165, 0.12);
+            border-color: rgba(101, 132, 165, 0.3);
             color: var(--accent);
         }
 
@@ -494,9 +560,13 @@
             }
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 420px) {
             .type-tabs {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: 1fr;
+            }
+
+            .tab-desc {
+                display: none;
             }
         }
     </style>
@@ -526,35 +596,71 @@
         <div class="download-card glass" id="download-card">
             <div class="card-title">
                 <i data-feather="download-cloud"></i>
-                Select type &amp; paste URL
+                What do you want to download?
             </div>
 
-            <!-- Type Tabs -->
+            <!-- Type Cards -->
             <div class="type-tabs" id="type-tabs">
-                <button class="type-tab active" data-value="1">
-                    <i data-feather="file"></i>
-                    Direct File
+
+                <!-- 1. Direct File -->
+                <button class="type-tab active" data-value="1" data-placeholder="https://example.com/file.pdf">
+                    <div class="tab-icon"><i data-feather="file"></i></div>
+                    <div class="tab-title">Direct File</div>
+                    <div class="tab-desc">Any file with a direct download link — PDF, image, ZIP, etc.</div>
+                    <div class="tab-pills">
+                        <span class="tab-pill">PDF</span>
+                        <span class="tab-pill">ZIP</span>
+                        <span class="tab-pill">Image</span>
+                        <span class="tab-pill">Any file</span>
+                    </div>
                 </button>
-                <button class="type-tab" data-value="2">
-                    <i data-feather="youtube"></i>
-                    Video / Audio
+
+                <!-- 2. Video / Audio -->
+                <button class="type-tab" data-value="2" data-placeholder="https://youtube.com/watch?v=...">
+                    <div class="tab-icon"><i data-feather="play-circle"></i></div>
+                    <div class="tab-title">Video / Audio</div>
+                    <div class="tab-desc">Download videos or extract MP3 audio from social platforms.</div>
+                    <div class="tab-pills">
+                        <span class="tab-pill">YouTube</span>
+                        <span class="tab-pill">TikTok</span>
+                        <span class="tab-pill">Instagram</span>
+                        <span class="tab-pill">Twitter</span>
+                    </div>
                 </button>
-                <button class="type-tab" data-value="3">
-                    <i data-feather="image"></i>
-                    Gallery
+
+                <!-- 3. Gallery -->
+                <button class="type-tab" data-value="3" data-placeholder="https://pixiv.net/artworks/...">
+                    <div class="tab-icon"><i data-feather="image"></i></div>
+                    <div class="tab-title">Gallery</div>
+                    <div class="tab-desc">Bulk-download image galleries from art &amp; media sites.</div>
+                    <div class="tab-pills">
+                        <span class="tab-pill">Pixiv</span>
+                        <span class="tab-pill">Flickr</span>
+                        <span class="tab-pill">Reddit</span>
+                        <span class="tab-pill">DeviantArt</span>
+                    </div>
                 </button>
-                <button class="type-tab" data-value="4">
-                    <i data-feather="globe"></i>
-                    Page Scraper
+
+                <!-- 4. Page Scraper -->
+                <button class="type-tab" data-value="4" data-placeholder="https://anywebsite.com/page">
+                    <div class="tab-icon"><i data-feather="globe"></i></div>
+                    <div class="tab-title">Page Scraper</div>
+                    <div class="tab-desc">Grab every image found on any webpage automatically.</div>
+                    <div class="tab-pills">
+                        <span class="tab-pill">Any website</span>
+                        <span class="tab-pill">News</span>
+                        <span class="tab-pill">Blogs</span>
+                    </div>
                 </button>
+
             </div>
 
             <input type="hidden" id="selected-type" value="1">
 
             <!-- URL Input -->
             <div class="form-group">
-                <label for="url">URL</label>
-                <input type="url" id="url" placeholder="https://..." autocomplete="off">
+                <label for="url">Paste your URL</label>
+                <input type="url" id="url" placeholder="https://example.com/file.pdf" autocomplete="off">
             </div>
 
             <!-- Quality (Video only) -->

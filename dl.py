@@ -28,9 +28,17 @@ def file_downloader(url):
             else:
                 filename = "downloaded_file"
 
-        return True, filename, response.content
+        # Capture the real Content-Type so phone knows what app to open it with
+        content_type = response.headers.get('Content-Type', '').split(';')[0].strip()
+        if not content_type or content_type == 'application/octet-stream':
+            import mimetypes
+            guessed, _ = mimetypes.guess_type(filename)
+            if guessed:
+                content_type = guessed
+
+        return True, filename, response.content, content_type
     except Exception as e:
-        return False, None, str(e)
+        return False, None, str(e), None
 
 
 # ─────────────────────────────────────────────
