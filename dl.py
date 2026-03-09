@@ -10,12 +10,13 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import tempfile
 
-# Ensure ffmpeg binary is available on PATH (works on Railway without system ffmpeg)
+# Ensure ffmpeg binary is available via imageio-ffmpeg on Railway
+ffmpeg_path = None
 try:
-    import static_ffmpeg
-    static_ffmpeg.add_paths()
+    import imageio_ffmpeg
+    ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 except ImportError:
-    pass  # ffmpeg already in system PATH or not needed
+    pass
 
 # ─────────────────────────────────────────────
 # 1. Direct File Downloader (Images, ZIPs, PDFs)
@@ -75,9 +76,13 @@ def video_downloader(url, quality="1"):
 
     ydl_opts = {
         'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-        'format': 'bestaudio/best' if quality == "2" else 'b',
+        'format': 'bestaudio/best' if quality == "2" else 'bestvideo*+bestaudio/best',
+        'merge_output_format': 'mp4' if quality != "2" else None,
         'quiet': True,
     }
+    
+    if ffmpeg_path:
+        ydl_opts['ffmpeg_location'] = ffmpeg_path
 
     if tmp_cookie:
         ydl_opts['cookiefile'] = tmp_cookie
