@@ -49,24 +49,23 @@ def video_downloader(url, quality="1"):
     tmp_dir = tempfile.mkdtemp()
 
     if quality == "2":
-        # Audio: download best native audio (m4a/webm) — no ffmpeg conversion needed
-        # Phone browsers play m4a and webm natively
+        # Audio: best quality m4a/webm, no ffmpeg conversion needed
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
             'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best',
             'quiet': True,
         }
     else:
-        # Video: prefer pre-merged MP4 (no ffmpeg merge needed)
-        # Falls back to ffmpeg merge only if pre-merged isn't available
+        # Video: best quality first (needs ffmpeg to merge) → pre-merged fallback
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
             'format': (
-                'best[ext=mp4]'           # pre-merged mp4 (no ffmpeg)
-                '/best[ext=webm]'          # pre-merged webm (no ffmpeg)
-                '/bestvideo[ext=mp4]+bestaudio[ext=m4a]'  # merge if ffmpeg available
-                '/best'                    # last resort: whatever works
+                'bestvideo[ext=mp4]+bestaudio[ext=m4a]'  # best quality (ffmpeg merge)
+                '/bestvideo+bestaudio'                    # best available + merge
+                '/best[ext=mp4]'                          # pre-merged mp4 fallback
+                '/best'                                   # last resort
             ),
+            'merge_output_format': 'mp4',
             'quiet': True,
         }
 
