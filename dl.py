@@ -69,19 +69,14 @@ def video_downloader(url, quality="1"):
     if quality == "2":
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-            'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best',
+            'format': 'bestaudio/best',
             'quiet': True,
             **bypass,
         }
     else:
         ydl_opts = {
             'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-            'format': (
-                'bestvideo[ext=mp4]+bestaudio[ext=m4a]'
-                '/bestvideo+bestaudio'
-                '/best[ext=mp4]'
-                '/best'
-            ),
+            'format': 'bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'quiet': True,
             **bypass,
