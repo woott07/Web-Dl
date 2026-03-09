@@ -5,9 +5,16 @@ from flask import Flask, render_template, request, jsonify, send_file
 import dl
 
 # If YouTube cookies are provided via Railway variables, write them to file at startup
-# (Run this globally so Gunicorn executes it when loading the app)
+# Supports both raw text and base64-encoded cookies (base64 preserves newlines)
+import base64 as _b64
 yt_cookies = os.environ.get('YT_COOKIES')
 if yt_cookies:
+    # Detect if it's base64 (real cookies have tab characters, base64 doesn't)
+    if '\t' not in yt_cookies:
+        try:
+            yt_cookies = _b64.b64decode(yt_cookies).decode('utf-8')
+        except Exception:
+            pass  # Not base64, use as-is
     with open('cookies.txt', 'w', encoding='utf-8') as f:
         f.write(yt_cookies)
 
