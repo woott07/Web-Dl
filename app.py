@@ -10,19 +10,21 @@ import base64 as _b64
 import zlib as _zlib
 yt_cookies = os.environ.get('YT_COOKIES')
 if yt_cookies:
+    yt_cookies = yt_cookies.strip()
     # Check if it was compressed using our new script
     if yt_cookies.startswith('ZLIB_'):
         try:
             compressed = _b64.b64decode(yt_cookies[5:])
             yt_cookies = _zlib.decompress(compressed).decode('utf-8')
-        except Exception:
-            pass
+        except Exception as e:
+            yt_cookies = f"# FAILED_TO_DECODE_ZLIB: {str(e)}"
     # Legacy fallback: pure base64
     elif '\t' not in yt_cookies:
         try:
             yt_cookies = _b64.b64decode(yt_cookies).decode('utf-8')
-        except Exception:
-            pass  # Not base64, use as-is
+        except Exception as e:
+            yt_cookies = f"# FAILED_TO_DECODE_B64: {str(e)}"
+            
     with open('cookies.txt', 'w', encoding='utf-8') as f:
         f.write(yt_cookies)
 

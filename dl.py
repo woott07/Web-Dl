@@ -105,7 +105,7 @@ def video_downloader(url, quality="1"):
 
     except Exception as e:
         try:
-            preview = open(tmp_cookie).read(80).replace('\n','\\n').replace('\t','\\t') if tmp_cookie else 'N/A'
+            preview = open(master_cookie).read(80).replace('\n','\\n').replace('\t','\\t') if master_cookie else 'N/A'
         except Exception:
             preview = 'unreadable'
         debug = f"{str(e)} | cookies={preview}"
