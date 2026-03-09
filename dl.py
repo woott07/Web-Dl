@@ -76,9 +76,21 @@ def video_downloader(url, quality="1"):
 
     ydl_opts = {
         'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-        'format': 'bestaudio/best' if quality == "2" else 'bestvideo*+bestaudio/best',
+        'format': 'bestaudio/best' if quality == "2" else 'bv*+ba/b',
         'merge_output_format': 'mp4' if quality != "2" else None,
         'quiet': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android'],
+                'skip': ['webpage']
+            }
+        },
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+        },
+        'retries': 10,
+        'fragment_retries': 10
     }
     
     if ffmpeg_path:
@@ -109,11 +121,24 @@ def video_downloader(url, quality="1"):
         return True, filename, file_bytes
 
     except Exception as e:
+        format_count = -1
+        try:
+            # Drop the formatting requirement to just count what's available
+            debug_opts = ydl_opts.copy()
+            debug_opts['format'] = None
+            with yt_dlp.YoutubeDL(debug_opts) as debug_ydl:
+                info = debug_ydl.extract_info(url, download=False)
+                format_count = len(info.get('formats', []))
+        except Exception:
+            format_count = "error"
+
         try:
             preview = open(master_cookie).read(80).replace('\n','\\n').replace('\t','\\t') if master_cookie else 'N/A'
         except Exception:
             preview = 'unreadable'
-        debug = f"{str(e)} | cookies={preview}"
+            
+        debug = f"{str(e)} | formats_found={format_count} | cookies={preview}"
+        
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
