@@ -1,0 +1,54 @@
+# ── Virtual Environments ──────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Python Cache ──────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# ── Downloaded Files (don't upload to GitHub!) ─
+Downloads/
+temp/
+tmp/
+
+# ── Flask / Development ───────────────────────
+instance/
+.flask_session/
+*.log
+
+# ── Environment Variables (KEEP SECRET!) ──────
+.env
+.env.local
+.env.production
+*.env
+
+# ── VS Code Settings ──────────────────────────
+.vscode/
+*.code-workspace
+
+# ── Windows Junk Files ────────────────────────
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ── Build / Distribution ──────────────────────
+dist/
+build/
+*.egg-info/
+*.spec
+
+# ── pytest / Testing ──────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Misc ──────────────────────────────────────
+*.DS_Store
+*.bak
+*.swp
+*.swo

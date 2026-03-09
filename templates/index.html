@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Downloader</title>
+    <!-- We're importing a nice modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            /* Cool animated animated gradient background */
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Glassmorphism container */
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 90%;
+            max-width: 500px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #ccc;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #ddd;
+        }
+
+        input[type="url"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        input[type="url"]:focus,
+        select:focus {
+            border-color: #4facfe;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        option {
+            background: #16213e;
+            color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.6);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #quality-group {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success {
+            background: rgba(46, 213, 115, 0.2);
+            border: 1px solid #2ed573;
+            color: #2ed573;
+        }
+
+        .error {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid #ff4757;
+            color: #ff4757;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #00f2fe;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Universal Downloader</h1>
+        <p class="subtitle">Download Any File, Video, or Image Gallery</p>
+
+        <form id="download-form">
+            <div class="form-group">
+                <label for="url">URL Address</label>
+                <input type="url" id="url" placeholder="https://..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="type">Download Type</label>
+                <select id="type" required>
+                    <option value="1">1. Direct File (Image, ZIP, PDF)</option>
+                    <option value="2">2. Video / Audio (YouTube, Twitter, IG)</option>
+                    <option value="3">3. Image Gallery (Reddit, Pinterest, etc)</option>
+                    <option value="4">4. Full Page Image Scraper</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="quality-group">
+                <label for="quality">Quality Settings</label>
+                <select id="quality">
+                    <option value="1">Best Video (MP4)</option>
+                    <option value="2">Audio Only (MP3)</option>
+                </select>
+            </div>
+
+            <button type="submit" id="submit-btn" style="position:relative">
+                <span id="btn-text">Start Download</span>
+            </button>
+        </form>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #aaa;">Downloading... This might take a while.</p>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- Frontend JS logic connecting to Python -->
+    <script>
+        const typeSelect = document.getElementById('type');
+        const qualityGroup = document.getElementById('quality-group');
+        const form = document.getElementById('download-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const loader = document.getElementById('loader');
+        const messageDiv = document.getElementById('message');
+
+        // Show/hide quality dropdown based on selection (It only shows when Video is selected)
+        typeSelect.addEventListener('change', () => {
+            if (typeSelect.value === '2') {
+                qualityGroup.style.display = 'block';
+            } else {
+                qualityGroup.style.display = 'none';
+            }
+        });
+
+        // Handle Download Submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Stop page refresh
+
+            const url = document.getElementById('url').value;
+            const type = document.getElementById('type').value;
+            const quality = document.getElementById('quality').value;
+
+            // UI changes during download
+            form.style.display = 'none';
+            loader.style.display = 'block';
+            messageDiv.style.display = 'none';
+
+            try {
+                // Send the data to the Flask backend
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, type, quality })
+                });
+
+                const result = await response.json();
+
+                // Show the success/error message returned from Python
+                messageDiv.textContent = result.message;
+                messageDiv.className = result.success ? 'message success' : 'message error';
+
+            } catch (error) {
+                messageDiv.textContent = "A network error occurred connecting to the server.";
+                messageDiv.className = 'message error';
+            }
+
+            // Restore UI after download completes
+            loader.style.display = 'none';
+            messageDiv.style.display = 'block';
+            form.style.display = 'block';
+            document.getElementById('url').value = ''; // clear url input box
+        });
+    </script>
+</body>
+
+</html>

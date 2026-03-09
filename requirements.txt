@@ -1,0 +1,6 @@
+yt-dlp
+gallery-dl
+requests
+wget
+beautifulsoup4
+tqdm
