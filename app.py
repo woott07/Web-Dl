@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, jsonify
-import dl  # Import your downloader script!
+import io
+from flask import Flask, render_template, request, jsonify, send_file
+import dl
 
 app = Flask(__name__)
 
@@ -17,24 +18,34 @@ def download():
     if not url:
         return jsonify({'success': False, 'message': 'URL is required!'})
 
-    # Call the appropriate function from dl.py
     try:
         if dl_type == '1':
-            success, message = dl.file_downloader(url)
+            success, filename, result = dl.file_downloader(url)
         elif dl_type == '2':
-            success, message = dl.video_downloader(url, quality)
+            success, filename, result = dl.video_downloader(url, quality)
         elif dl_type == '3':
-            success, message = dl.gallery_downloader(url)
+            success, filename, result = dl.gallery_downloader(url)
         elif dl_type == '4':
-            success, message = dl.webpage_image_scraper(url)
+            success, filename, result = dl.webpage_image_scraper(url)
         else:
             return jsonify({'success': False, 'message': 'Invalid download type selected.'})
-            
-        return jsonify({'success': success, 'message': message})
-        
+
+        if not success:
+            # result is the error message string
+            return jsonify({'success': False, 'message': result})
+
+        # result is bytes — stream straight to the user's browser
+        return send_file(
+            io.BytesIO(result),
+            download_name=filename,
+            as_attachment=True
+        )
+
     except Exception as e:
         return jsonify({'success': False, 'message': f'Server Error: {str(e)}'})
 
+
 if __name__ == '__main__':
-    # host='0.0.0.0' makes it accessible from your phone on the same WiFi!
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)

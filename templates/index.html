@@ -4,146 +4,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Downloader</title>
-    <!-- We're importing a nice modern font -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>Universal Downloader | Md Rana</title>
+    <meta name="description" content="Download any file, video, audio, or image gallery with a single click.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
 
     <style>
-        body,
-        html {
+        /* ── Design System ─────────────────────────── */
+        :root {
+            --bg-dark: #0f1012;
+            --bg-surface: #16171a;
+            --text-main: #ededed;
+            --text-muted: #8a8d93;
+            --accent: #6584a5;
+            --accent-hover: #7b9bbb;
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --glass-border: rgba(255, 255, 255, 0.04);
+            --glass-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+            --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Outfit', sans-serif;
-            height: 100vh;
-            /* Cool animated animated gradient background */
-            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            background-color: var(--bg-dark);
+        }
+
+        body {
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: #fff;
         }
 
-        @keyframes gradientBG {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+        /* ── Page Loader ───────────────────────────── */
+        #page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
 
-        /* Glassmorphism container */
-        .container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 90%;
-            max-width: 500px;
-            transition: transform 0.3s ease;
+        #page-loader.fade-out {
+            opacity: 0;
+            visibility: hidden;
         }
 
-        .container:hover {
-            transform: translateY(-5px);
+        /* ── Cursor Glow ───────────────────────────── */
+        #cursor-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(101, 132, 165, 0.08) 0%, rgba(15, 16, 18, 0) 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9998;
+            transition: width 0.3s ease, height 0.3s ease;
         }
 
-        h1 {
+        /* ── Canvas ────────────────────────────────── */
+        #hero-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* ── Navbar ────────────────────────────────── */
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 1.5rem 0;
+            transition: var(--transition);
+        }
+
+        #navbar.scrolled {
+            background: rgba(15, 16, 18, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 0;
+        }
+
+        .nav-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-tag {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Glass Utility ─────────────────────────── */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 12px;
+        }
+
+        /* ── Main Card ─────────────────────────────── */
+        .main-wrapper {
+            width: 100%;
+            max-width: 560px;
+            padding: 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .hero-header {
             text-align: center;
-            margin-top: 0;
-            font-weight: 700;
-            letter-spacing: 1px;
-            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .hero-header.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero-header h1 {
+            font-size: 2.8rem;
+            font-weight: 600;
+            letter-spacing: -1px;
+            background: linear-gradient(180deg, #fff, #a0a0a0);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
         }
 
-        p.subtitle {
-            text-align: center;
-            color: #ccc;
-            margin-bottom: 30px;
-            font-size: 0.9em;
+        .hero-header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        /* ── Download Card ─────────────────────────── */
+        .download-card {
+            width: 100%;
+            padding: 2.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s;
         }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
+        .download-card.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Type Selector Tabs ────────────────────── */
+        .type-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.6rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .type-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.85rem 0.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
             font-weight: 500;
-            color: #ddd;
+            transition: var(--transition);
+            cursor: none;
+            letter-spacing: 0.2px;
         }
 
-        input[type="url"],
-        select {
+        .type-tab i,
+        .type-tab svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .type-tab:hover {
+            border-color: rgba(101, 132, 165, 0.3);
+            color: var(--text-main);
+            background: rgba(101, 132, 165, 0.05);
+        }
+
+        .type-tab.active {
+            border-color: var(--accent);
+            color: var(--text-main);
+            background: rgba(101, 132, 165, 0.1);
+        }
+
+        .type-tab.active i,
+        .type-tab.active svg {
+            color: var(--accent);
+        }
+
+        /* ── Form Group ────────────────────────────── */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
             width: 100%;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 16px;
-            font-family: 'Outfit', sans-serif;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: var(--transition);
             outline: none;
-            box-sizing: border-box;
-            transition: border-color 0.3s, background 0.3s;
+            cursor: none;
         }
 
-        input[type="url"]:focus,
-        select:focus {
-            border-color: #4facfe;
-            background: rgba(255, 255, 255, 0.15);
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--accent);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 4px rgba(101, 132, 165, 0.1);
         }
 
-        option {
-            background: #16213e;
-            color: #fff;
+        .form-group input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
         }
 
-        button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(90deg, #4facfe, #00f2fe);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
-            font-family: 'Outfit', sans-serif;
+        .form-group select option {
+            background: #16171a;
+            color: var(--text-main);
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.6);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
+        /* ── Quality Group ─────────────────────────── */
         #quality-group {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeInDown 0.3s ease forwards;
         }
 
-        @keyframes fadeIn {
+        @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
 
             to {
@@ -152,43 +314,63 @@
             }
         }
 
-        .message {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            display: none;
+        /* ── Submit ────────────────────────────────── */
+        .submit-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.9rem 2rem;
+            font-size: 0.95rem;
             font-weight: 500;
-            animation: fadeIn 0.3s ease;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+            cursor: none;
+            margin-top: 0.5rem;
         }
 
-        .success {
-            background: rgba(46, 213, 115, 0.2);
-            border: 1px solid #2ed573;
-            color: #2ed573;
+        .submit-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(101, 132, 165, 0.25);
         }
 
-        .error {
-            background: rgba(255, 71, 87, 0.2);
-            border: 1px solid #ff4757;
-            color: #ff4757;
+        .submit-btn:active {
+            transform: translateY(0);
         }
 
-        /* Loading Spinner */
-        .loader {
+        .submit-btn i {
+            width: 17px;
+            height: 17px;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Loader ────────────────────────────────── */
+        .loader-wrap {
             display: none;
-            text-align: center;
-            margin-top: 20px;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem 0 0.5rem;
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 34px;
+            height: 34px;
+            border: 2px solid var(--glass-border);
+            border-top-color: var(--accent);
             border-radius: 50%;
-            border-top-color: #00f2fe;
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto;
+            animation: spin 0.9s ease-in-out infinite;
         }
 
         @keyframes spin {
@@ -196,108 +378,435 @@
                 transform: rotate(360deg);
             }
         }
+
+        .loader-wrap p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Message ───────────────────────────────── */
+        .message-box {
+            display: none;
+            padding: 0.9rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 1rem;
+            animation: fadeInDown 0.3s ease;
+        }
+
+        .message-box.success {
+            background: rgba(46, 213, 115, 0.07);
+            border: 1px solid rgba(46, 213, 115, 0.25);
+            color: #2ed573;
+        }
+
+        .message-box.error {
+            background: rgba(255, 71, 87, 0.07);
+            border: 1px solid rgba(255, 71, 87, 0.25);
+            color: #ff4757;
+        }
+
+        /* ── Section title line ────────────────────── */
+        .card-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        /* ── Footer ────────────────────────────────── */
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 1.25rem 0;
+            text-align: center;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        footer a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* ── Responsive ────────────────────────────── */
+        @media (max-width: 768px) {
+            #cursor-glow {
+                display: none;
+            }
+
+            * {
+                cursor: auto;
+            }
+
+            .glass {
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                background: rgba(22, 23, 26, 0.95);
+            }
+
+            .hero-header h1 {
+                font-size: 2rem;
+            }
+
+            .download-card {
+                padding: 1.75rem;
+            }
+
+            body {
+                justify-content: flex-start;
+                padding-top: 90px;
+                padding-bottom: 70px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .type-tabs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div id="page-loader"></div>
+    <div id="cursor-glow"></div>
 
-    <div class="container">
-        <h1>Universal Downloader</h1>
-        <p class="subtitle">Download Any File, Video, or Image Gallery</p>
+    <canvas id="hero-canvas"></canvas>
 
-        <form id="download-form">
-            <div class="form-group">
-                <label for="url">URL Address</label>
-                <input type="url" id="url" placeholder="https://..." required>
+    <nav id="navbar">
+        <div class="nav-content">
+            <a href="#" class="logo">Md<span>.</span></a>
+            <span class="nav-tag">Universal Downloader</span>
+        </div>
+    </nav>
+
+    <main class="main-wrapper">
+        <!-- Header -->
+        <div class="hero-header" id="hero-header">
+            <h1>Download Anything</h1>
+            <p>Files · Videos · Galleries · Scraped Images</p>
+        </div>
+
+        <!-- Card -->
+        <div class="download-card glass" id="download-card">
+            <div class="card-title">
+                <i data-feather="download-cloud"></i>
+                Select type &amp; paste URL
             </div>
 
-            <div class="form-group">
-                <label for="type">Download Type</label>
-                <select id="type" required>
-                    <option value="1">1. Direct File (Image, ZIP, PDF)</option>
-                    <option value="2">2. Video / Audio (YouTube, Twitter, IG)</option>
-                    <option value="3">3. Image Gallery (Reddit, Pinterest, etc)</option>
-                    <option value="4">4. Full Page Image Scraper</option>
-                </select>
+            <!-- Type Tabs -->
+            <div class="type-tabs" id="type-tabs">
+                <button class="type-tab active" data-value="1">
+                    <i data-feather="file"></i>
+                    Direct File
+                </button>
+                <button class="type-tab" data-value="2">
+                    <i data-feather="youtube"></i>
+                    Video / Audio
+                </button>
+                <button class="type-tab" data-value="3">
+                    <i data-feather="image"></i>
+                    Gallery
+                </button>
+                <button class="type-tab" data-value="4">
+                    <i data-feather="globe"></i>
+                    Page Scraper
+                </button>
             </div>
 
+            <input type="hidden" id="selected-type" value="1">
+
+            <!-- URL Input -->
+            <div class="form-group">
+                <label for="url">URL</label>
+                <input type="url" id="url" placeholder="https://..." autocomplete="off">
+            </div>
+
+            <!-- Quality (Video only) -->
             <div class="form-group" id="quality-group">
-                <label for="quality">Quality Settings</label>
+                <label for="quality">Quality</label>
                 <select id="quality">
                     <option value="1">Best Video (MP4)</option>
                     <option value="2">Audio Only (MP3)</option>
                 </select>
             </div>
 
-            <button type="submit" id="submit-btn" style="position:relative">
+            <!-- Submit -->
+            <button class="submit-btn" id="submit-btn">
+                <i data-feather="download"></i>
                 <span id="btn-text">Start Download</span>
             </button>
-        </form>
 
-        <div class="loader" id="loader">
-            <div class="spinner"></div>
-            <p style="margin-top: 15px; color: #aaa;">Downloading... This might take a while.</p>
+            <!-- Loader -->
+            <div class="loader-wrap" id="loader">
+                <div class="spinner"></div>
+                <p>Working on it — this might take a while…</p>
+            </div>
+
+            <!-- Message -->
+            <div class="message-box" id="message-box"></div>
         </div>
+    </main>
 
-        <div id="message" class="message"></div>
-    </div>
+    <footer>
+        <p>&copy; <span id="year"></span> <a href="https://github.com/woott07" target="_blank">Md Rana</a> — built with
+            ♥</p>
+    </footer>
 
-    <!-- Frontend JS logic connecting to Python -->
     <script>
-        const typeSelect = document.getElementById('type');
-        const qualityGroup = document.getElementById('quality-group');
-        const form = document.getElementById('download-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const loader = document.getElementById('loader');
-        const messageDiv = document.getElementById('message');
+        // ── Feather Icons ──────────────────────────────
+        feather.replace();
 
-        // Show/hide quality dropdown based on selection (It only shows when Video is selected)
-        typeSelect.addEventListener('change', () => {
-            if (typeSelect.value === '2') {
-                qualityGroup.style.display = 'block';
-            } else {
-                qualityGroup.style.display = 'none';
+        // ── Page Loader ────────────────────────────────
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('page-loader');
+            setTimeout(() => {
+                loader.classList.add('fade-out');
+                document.getElementById('hero-header').classList.add('active');
+                document.getElementById('download-card').classList.add('active');
+            }, 300);
+        });
+
+        // ── Cursor Glow ────────────────────────────────
+        const cursorGlow = document.getElementById('cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            if (window.matchMedia("(pointer: fine)").matches && cursorGlow) {
+                cursorGlow.style.left = `${e.clientX}px`;
+                cursorGlow.style.top = `${e.clientY}px`;
             }
         });
 
-        // Handle Download Submit
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Stop page refresh
+        const interactables = document.querySelectorAll('a, button, input, select, .type-tab');
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                if (cursorGlow) {
+                    cursorGlow.style.width = '400px';
+                    cursorGlow.style.height = '400px';
+                    cursorGlow.style.background = 'radial-gradient(circle, rgba(101, 132, 165, 0.12) 0%, rgba(15, 16, 18, 0) 70%)';
+                }
+            });
+            el.addEventListener('mouseleave', () => {
+                if (cursorGlow) {
+                    cursorGlow.style.width = '300px';
+                    cursorGlow.style.height = '300px';
+                    cursorGlow.style.background = 'radial-gradient(circle, rgba(101, 132, 165, 0.08) 0%, rgba(15, 16, 18, 0) 70%)';
+                }
+            });
+        });
 
-            const url = document.getElementById('url').value;
-            const type = document.getElementById('type').value;
+        // ── Navbar Scroll ──────────────────────────────
+        const navbar = document.getElementById('navbar');
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    navbar.classList.toggle('scrolled', window.scrollY > 50);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // ── Canvas Star Field ──────────────────────────
+        const canvas = document.getElementById('hero-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width, height, particles = [], shootingStars = [];
+
+            function initCanvas() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                particles = [];
+                shootingStars = [];
+                const numParticles = width > 768 ? 100 : 15;
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.5 + 0.2,
+                        vx: (Math.random() - 0.5) * 0.1,
+                        vy: (Math.random() * -0.2) - 0.05,
+                        alpha: Math.random() * 0.5 + 0.1,
+                        alphaSpeed: (Math.random() * 0.01) + 0.005
+                    });
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha += p.alphaSpeed;
+                    if (p.alpha <= 0.1 || p.alpha >= 0.8) p.alphaSpeed = -p.alphaSpeed;
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(200, 205, 215, ${p.alpha})`;
+                    ctx.fill();
+                });
+
+                if (width > 768 && Math.random() < 0.02 && shootingStars.length < 3) {
+                    const startX = Math.random() * width;
+                    shootingStars.push({
+                        x: startX, y: 0,
+                        vx: (Math.random() * 4 + 4) * (startX > width / 2 ? -1 : 1),
+                        vy: Math.random() * 3 + 4,
+                        length: Math.random() * 80 + 30,
+                        opacity: 1,
+                        decay: Math.random() * 0.015 + 0.01
+                    });
+                }
+
+                for (let i = shootingStars.length - 1; i >= 0; i--) {
+                    let star = shootingStars[i];
+                    star.x += star.vx;
+                    star.y += star.vy;
+                    star.opacity -= star.decay;
+                    if (star.opacity <= 0 || star.y > height || star.x < 0 || star.x > width) {
+                        shootingStars.splice(i, 1);
+                        continue;
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(star.x, star.y);
+                    ctx.lineTo(star.x - star.vx * (star.length * 0.1), star.y - star.vy * (star.length * 0.1));
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                    ctx.stroke();
+                }
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', initCanvas);
+            initCanvas();
+            drawParticles();
+        }
+
+        // ── Type Tab Switching ─────────────────────────
+        const tabs = document.querySelectorAll('.type-tab');
+        const selectedType = document.getElementById('selected-type');
+        const qualityGroup = document.getElementById('quality-group');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                selectedType.value = tab.dataset.value;
+                qualityGroup.style.display = tab.dataset.value === '2' ? 'block' : 'none';
+            });
+        });
+
+        // ── Download Handler ───────────────────────────
+        const submitBtn = document.getElementById('submit-btn');
+        const urlInput = document.getElementById('url');
+        const loader = document.getElementById('loader');
+        const msgBox = document.getElementById('message-box');
+        const btnText = document.getElementById('btn-text');
+
+        function showMessage(text, type) {
+            msgBox.textContent = text;
+            msgBox.className = `message-box ${type}`;
+            msgBox.style.display = 'block';
+        }
+
+        function resetUI() {
+            loader.style.display = 'none';
+            submitBtn.disabled = false;
+            btnText.textContent = 'Start Download';
+            feather.replace();
+        }
+
+        submitBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showMessage('❌ Please paste a URL first.', 'error');
+                return;
+            }
+
+            const type = selectedType.value;
             const quality = document.getElementById('quality').value;
 
-            // UI changes during download
-            form.style.display = 'none';
-            loader.style.display = 'block';
-            messageDiv.style.display = 'none';
+            // Lock UI
+            submitBtn.disabled = true;
+            btnText.textContent = 'Downloading…';
+            loader.style.display = 'flex';
+            msgBox.style.display = 'none';
 
             try {
-                // Send the data to the Flask backend
                 const response = await fetch('/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url, type, quality })
                 });
 
-                const result = await response.json();
+                const contentType = response.headers.get('Content-Type') || '';
 
-                // Show the success/error message returned from Python
-                messageDiv.textContent = result.message;
-                messageDiv.className = result.success ? 'message success' : 'message error';
+                if (contentType.includes('application/json')) {
+                    // Error from server
+                    const result = await response.json();
+                    showMessage('❌ ' + result.message, 'error');
+                } else {
+                    // ✅ File incoming — trigger browser download
+                    const blob = await response.blob();
+                    const cd = response.headers.get('Content-Disposition') || '';
+                    let filename = 'download';
+                    const match = cd.match(/filename[^;=\n]*=(['"]?)([^'";\n]*)\1/);
+                    if (match) filename = decodeURIComponent(match[2]);
 
-            } catch (error) {
-                messageDiv.textContent = "A network error occurred connecting to the server.";
-                messageDiv.className = 'message error';
+                    const objectUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = objectUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(objectUrl);
+
+                    showMessage(`✅ "${filename}" is saving to your device!`, 'success');
+                    urlInput.value = '';
+                }
+            } catch (err) {
+                showMessage('❌ Network error: ' + err.message, 'error');
             }
 
-            // Restore UI after download completes
-            loader.style.display = 'none';
-            messageDiv.style.display = 'block';
-            form.style.display = 'block';
-            document.getElementById('url').value = ''; // clear url input box
+            resetUI();
         });
+
+        // Allow Enter key on URL input
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitBtn.click();
+        });
+
+        // ── Year ───────────────────────────────────────
+        document.getElementById('year').textContent = new Date().getFullYear();
     </script>
 </body>
 
