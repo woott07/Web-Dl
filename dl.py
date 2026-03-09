@@ -48,39 +48,33 @@ def file_downloader(url):
 def video_downloader(url, quality="1"):
     tmp_dir = tempfile.mkdtemp()
 
-    # Automatically use cookies.txt if it exists
-    cookie_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    # Find cookies file — check multiple locations
+    cookie_paths = [
+        os.path.join(os.path.dirname(__file__), 'cookies.txt'),  # next to dl.py
+        os.path.join(os.getcwd(), 'cookies.txt'),                # current working dir
+        'cookies.txt',                                            # relative
+    ]
+    cookie_file = None
+    for p in cookie_paths:
+        if os.path.exists(p):
+            cookie_file = p
+            break
 
-    def _try_download(fmt, merge_mp4=False):
-        """Attempt download with a given format string."""
-        opts = {
-            'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-            'format': fmt,
-            'quiet': True,
-        }
-        if merge_mp4:
-            opts['merge_output_format'] = 'mp4'
-        if os.path.exists(cookie_path):
-            opts['cookiefile'] = cookie_path
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.download([url])
+    ydl_opts = {
+        'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
+        'format': 'best',
+        'quiet': True,
+    }
+
+    if quality == "2":
+        ydl_opts['format'] = 'bestaudio/best'
+
+    if cookie_file:
+        ydl_opts['cookiefile'] = cookie_file
 
     try:
-        if quality == "2":
-            # Audio: try bestaudio, fallback to best
-            try:
-                _try_download('bestaudio')
-            except Exception:
-                _try_download('best')
-        else:
-            # Video: try merge first (needs ffmpeg), then pre-merged, then anything
-            try:
-                _try_download('bestvideo+bestaudio', merge_mp4=True)
-            except Exception:
-                try:
-                    _try_download('best[ext=mp4]')
-                except Exception:
-                    _try_download('best')
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
         files = os.listdir(tmp_dir)
         if not files:
@@ -98,10 +92,12 @@ def video_downloader(url, quality="1"):
         return True, filename, file_bytes
 
     except Exception as e:
+        # Include debug info so we know what went wrong
+        debug = f"{str(e)} | cookies_found={cookie_file is not None} | cwd={os.getcwd()}"
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
-        return False, None, str(e)
+        return False, None, debug
 
 
 # ─────────────────────────────────────────────
