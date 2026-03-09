@@ -7,10 +7,18 @@ import dl
 # If YouTube cookies are provided via Railway variables, write them to file at startup
 # Supports both raw text and base64-encoded cookies (base64 preserves newlines)
 import base64 as _b64
+import zlib as _zlib
 yt_cookies = os.environ.get('YT_COOKIES')
 if yt_cookies:
-    # Detect if it's base64 (real cookies have tab characters, base64 doesn't)
-    if '\t' not in yt_cookies:
+    # Check if it was compressed using our new script
+    if yt_cookies.startswith('ZLIB_'):
+        try:
+            compressed = _b64.b64decode(yt_cookies[5:])
+            yt_cookies = _zlib.decompress(compressed).decode('utf-8')
+        except Exception:
+            pass
+    # Legacy fallback: pure base64
+    elif '\t' not in yt_cookies:
         try:
             yt_cookies = _b64.b64decode(yt_cookies).decode('utf-8')
         except Exception:
