@@ -55,21 +55,26 @@ def file_downloader(url):
 def video_downloader(url, quality="1"):
     tmp_dir = tempfile.mkdtemp()
 
-    # Find cookies file — check multiple locations
-    cookie_paths = [
-        os.path.join(os.path.dirname(__file__), 'cookies.txt'),  # next to dl.py
-        os.path.join(os.getcwd(), 'cookies.txt'),                # current working dir
-        'cookies.txt',                                            # relative
-    ]
-    cookie_file = None
-    for p in cookie_paths:
+    # Find the master cookies file
+    master_cookie = None
+    for p in [
+        os.path.join(os.path.dirname(__file__), 'cookies.txt'),
+        os.path.join(os.getcwd(), 'cookies.txt'),
+    ]:
         if os.path.exists(p):
-            cookie_file = p
+            master_cookie = p
             break
+
+    # CRITICAL: Copy cookies to a temp file so yt-dlp can't overwrite the original.
+    # yt-dlp writes back to cookiefile after every request, erasing real cookies.
+    tmp_cookie = None
+    if master_cookie:
+        import shutil
+        tmp_cookie = os.path.join(tmp_dir, 'yt_cookies_tmp.txt')
+        shutil.copy2(master_cookie, tmp_cookie)
 
     ydl_opts = {
         'outtmpl': os.path.join(tmp_dir, '%(title)s.%(ext)s'),
-        # iOS/Android player clients return pre-merged MP4 streams — no ffmpeg needed at all
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios', 'android', 'web'],
@@ -81,14 +86,15 @@ def video_downloader(url, quality="1"):
     if quality == "2":
         ydl_opts['format'] = 'bestaudio/best'
 
-    if cookie_file:
-        ydl_opts['cookiefile'] = cookie_file
+    if tmp_cookie:
+        ydl_opts['cookiefile'] = tmp_cookie
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        files = os.listdir(tmp_dir)
+        # Get the downloaded file (ignore the tmp cookie file)
+        files = [f for f in os.listdir(tmp_dir) if f != 'yt_cookies_tmp.txt']
         if not files:
             return False, None, "Download failed: no file produced."
 
@@ -98,21 +104,17 @@ def video_downloader(url, quality="1"):
         with open(filepath, 'rb') as f:
             file_bytes = f.read()
 
-        os.remove(filepath)
+        for f in os.listdir(tmp_dir):
+            os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
 
         return True, filename, file_bytes
 
     except Exception as e:
-        try:
-            preview = open(cookie_file).read(80).replace('\n','\\n').replace('\t','\\t') if cookie_file else 'N/A'
-        except Exception:
-            preview = 'unreadable'
-        debug = f"{str(e)} | cookies_found={cookie_file is not None} | cookie_preview={preview}"
         for f in os.listdir(tmp_dir):
             os.remove(os.path.join(tmp_dir, f))
         os.rmdir(tmp_dir)
-        return False, None, debug
+        return False, None, str(e)
 
 
 # ─────────────────────────────────────────────
