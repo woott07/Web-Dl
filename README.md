@@ -35,7 +35,7 @@ Building a dependable downloader that works on cloud servers involves bypassing 
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/woott07/Web-Dl.git
    cd dl-vd-img
    ```
 
